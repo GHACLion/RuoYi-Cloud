@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cssc.srwj.mapper.WenduYaliJinLiaoLiangMapper">
+    <resultMap id="BaseResultMap" type="com.cssc.srwj.domain.WenDuYaLiJinLiaoLiang">
+        <result column="id" property="id" jdbcType="VARCHAR"/>
+        <result column="luhao" property="luhao" jdbcType="VARCHAR"/>
+        <result column="jinliao_liusu" property="jinliaoLiusu" jdbcType="DECIMAL"/>
+        <result column="leiji_jinliaoliang" property="leijiJinliaoliang" jdbcType="DECIMAL"/>
+        <result column="luwen_3" property="luwen3" jdbcType="DECIMAL"/>
+        <result column="luwen_4" property="luwen4" jdbcType="DECIMAL"/>
+        <result column="reduan_fanyingqi_yali" property="reduanFanyingqiYali" jdbcType="DECIMAL"/>
+        <result column="lu_status" property="luStatus" jdbcType="TINYINT"/>
+        <result column="create_by" property="createBy" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" javaType="java.util.Date"/>
+        <result column="update_by" property="updateBy" jdbcType="VARCHAR"/>
+        <result column="update_time" property="updateTime" javaType="java.util.Date"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="pre_jinliaoliang" property="preJinliaoliang" jdbcType="DECIMAL"/>
+    </resultMap>
+
+    <select id="getGuanXi1" resultMap="BaseResultMap" resultType="list">
+        with tmp as (
+        select id, luhao,jinliao_liusu, leiji_jinliaoliang, luwen_3, luwen_4, reduan_fanyingqi_yali, create_time,
+        lag(leiji_jinliaoliang,1,null) over(order by create_time) as pre_jinliaoliang,
+        lead(leiji_jinliaoliang,1,null) over(order by create_time) as next_jinliaoliang
+        from wendu_yali_jinliaoliang
+        where luhao = #{luhao}
+        )
+        select id, luhao,jinliao_liusu, leiji_jinliaoliang, luwen_3, luwen_4, reduan_fanyingqi_yali, create_time,
+        pre_jinliaoliang
+        from tmp
+        where (leiji_jinliaoliang  <![CDATA[ < ]]> 0.5 and (leiji_jinliaoliang <![CDATA[ < ]]> pre_jinliaoliang or pre_jinliaoliang is null))
+        or (leiji_jinliaoliang <![CDATA[ > ]]> 38 and next_jinliaoliang is null)
+        order by create_time desc limit 2;
+    </select>
+
+    <select id="getGuanXi"  resultMap="BaseResultMap" resultType="list">
+        select id, luhao,jinliao_liusu, leiji_jinliaoliang, luwen_3, luwen_4, reduan_fanyingqi_yali, create_time
+        from wendu_yali_jinliaoliang
+        where luhao = #{luhao} and (id between #{idmin} and #{idmax}) and leiji_jinliaoliang  <![CDATA[ > ]]>  0 and leiji_jinliaoliang <![CDATA[ < ]]>  #{prejiJinliaoliang};
+    </select>
+</mapper>
